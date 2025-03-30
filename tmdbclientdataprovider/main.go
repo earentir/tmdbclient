@@ -59,7 +59,7 @@ func runSearch(cmd *cobra.Command, args []string) {
 	query := strings.Join(args, " ")
 
 	// Get the TMDB API key from the environment.
-	apiKey := "ef935dd0a2e50b6b39402fe0e0e561bf" // os.Getenv("TMDB_API_KEY")
+	apiKey := "foobar" // os.Getenv("TMDB_API_KEY")
 	// if apiKey == "" {
 	// 	log.Fatal("TMDB_API_KEY environment variable not set")
 	// }
