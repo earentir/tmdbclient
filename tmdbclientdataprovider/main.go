@@ -27,13 +27,27 @@ type SearchResult struct {
 }
 
 func main() {
+	var apiKey string
+
 	rootCmd := &cobra.Command{
 		Use:   "tmdbclientdataprovider",
 		Short: "CLI app to fetch data from TMDB",
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			// If no API key is provided via flag, try to get it from environment
+			if apiKey == "" {
+				apiKey = os.Getenv("TMDB_API_KEY")
+				if apiKey == "" && cmd.Name() != "help" {
+					log.Fatal("API key not provided. Use --api-key flag or set TMDB_API_KEY environment variable")
+				}
+			}
+		},
 	}
 
-	// Add the search command.
-	rootCmd.AddCommand(searchCmd())
+	// Add global API key flag to the root command
+	rootCmd.PersistentFlags().StringVar(&apiKey, "api-key", "", "TMDB API key")
+
+	// Add the search command with reference to the API key.
+	rootCmd.AddCommand(searchCmd(&apiKey))
 
 	// Execute the root command.
 	if err := rootCmd.Execute(); err != nil {
@@ -43,26 +57,23 @@ func main() {
 }
 
 // searchCmd returns the search command definition.
-func searchCmd() *cobra.Command {
+func searchCmd(apiKey *string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "search [query]",
 		Short: "Search for a movie or TV show on TMDB",
 		Args:  cobra.MinimumNArgs(1),
-		Run:   runSearch,
+		Run: func(cmd *cobra.Command, args []string) {
+			runSearch(*apiKey, args)
+		},
 	}
+
 	return cmd
 }
 
 // runSearch executes the search command.
-func runSearch(cmd *cobra.Command, args []string) {
+func runSearch(apiKey string, args []string) {
 	// Join the provided args to form the query string.
 	query := strings.Join(args, " ")
-
-	// Get the TMDB API key from the environment.
-	apiKey := "foobar" // os.Getenv("TMDB_API_KEY")
-	// if apiKey == "" {
-	// 	log.Fatal("TMDB_API_KEY environment variable not set")
-	// }
 
 	// Initialize the TMDB client.
 	tmdbClient, err := tmdb.Init(apiKey)

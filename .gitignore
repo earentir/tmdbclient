@@ -35,3 +35,6 @@ tmdbclientdataprovider
 tmdbclientdataprovider.exe
 tmdbclient
 tmdbclient.exe
+#include the folders though
+!tmdbclient/
+!tmdbclientdataprovider/
