@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="C:\tools\Windows\-Development\lazarus36\fpc\bin\x86_64-win64\fpc.exe" Date="1502782332"/>
-  <Params Value=" -MObjFPC -Scghi -CX -WR -O3 -gw3 -gl -Xs -XX -WG -l -vewnhilbq -FiC:\Users\earentir\Documents\projects\fpc\tmdbclient\lib\x86_64-win64 -FuC:\tools\Windows\-Development\lazarus36\lazarus\lcl\units\x86_64-win64\win32 -FuC:\tools\Windows\-Development\lazarus36\lazarus\lcl\units\x86_64-win64 -FuC:\tools\Windows\-Development\lazarus36\lazarus\components\freetype\lib\x86_64-win64 -FuC:\tools\Windows\-Development\lazarus36\lazarus\components\lazutils\lib\x86_64-win64 -FuC:\tools\Windows\-Development\lazarus36\lazarus\packager\units\x86_64-win64 -FuC:\Users\earentir\Documents\projects\fpc\tmdbclient\ -FUC:\Users\earentir\Documents\projects\fpc\tmdbclient\lib\x86_64-win64\ -FEC:\Users\earentir\Documents\projects\fpc\tmdbclient\ -oC:\Users\earentir\Documents\projects\fpc\tmdbclient\tmdbclient.exe -dLCL -dLCLwin32 tmdbclient.lpr"/>
-</CONFIG>
