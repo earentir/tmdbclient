@@ -18,11 +18,20 @@ type
 
 type
 
-  { TForm1 }
+  { TTMDBClientForm }
 
-  TForm1 = class(TForm)
+  TTMDBClientForm = class(TForm)
     BottomPanel: TPanel;
     DataStringGrid: TStringGrid;
+    FilterPanel: TPanel;
+    ToolbarImageList: TImageList;
+    Panel1: TPanel;
+    ToolBar: TToolBar;
+    ToolButton1: TToolButton;
+    ToolButton2: TToolButton;
+    ToolButton3: TToolButton;
+    ToolButton4: TToolButton;
+    ToolButton5: TToolButton;
     TypesImageList: TImageList;
     SearchButton: TButton;
     TVCheck: TCheckBox;
@@ -56,7 +65,7 @@ type
   end;
 
 var
-  Form1: TForm1;
+  TMDBClientForm: TTMDBClientForm;
   Config: TConfig;
 
 
@@ -65,7 +74,7 @@ implementation
 
 {$R *.lfm}
 
-function TForm1.LoadConfig(const AFileName: string): TConfig;
+function TTMDBClientForm.LoadConfig(const AFileName: string): TConfig;
 var
   JSONData: TJSONData;
   JSONObject: TJSONObject;
@@ -101,7 +110,7 @@ begin
   end;
 end;
 
-procedure TForm1.FormCreate(Sender: TObject);
+procedure TTMDBClientForm.FormCreate(Sender: TObject);
 begin
 
   Config := LoadConfig('tmdbclient.config');
@@ -114,7 +123,7 @@ begin
   end
 end;
 
-function TForm1.LoadJsonFromFile: Boolean;
+function TTMDBClientForm.LoadJsonFromFile: Boolean;
 var
   OutputLines: TStringList;
   JsonFilePath: string;
@@ -141,7 +150,7 @@ begin
   end;
 end;
 
-procedure TForm1.SearchButtonClick(Sender: TObject);
+procedure TTMDBClientForm.SearchButtonClick(Sender: TObject);
 var
   SearchTerm: string;
 begin
@@ -151,7 +160,7 @@ begin
   ExecuteSearch(SearchTerm, Config.TMDBApiKey);
 end;
 
-procedure TForm1.ExecuteSearch(const SearchTerm: string; const APIKey: string);
+procedure TTMDBClientForm.ExecuteSearch(const SearchTerm: string; const APIKey: string);
 var
   curDir, exeName, output: string;
   exitStatus, ret: integer;
@@ -189,7 +198,7 @@ begin
     ShowMessage('Command execution failed with exit status: ' + IntToStr(exitStatus));
 end;
 
-procedure TForm1.SearchEditKeyDown(Sender: TObject; var Key: Word;
+procedure TTMDBClientForm.SearchEditKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
   if Key = VK_RETURN then
@@ -200,7 +209,7 @@ begin
   end;
 end;
 
-procedure TForm1.UpdateDisplayGrid;
+procedure TTMDBClientForm.UpdateDisplayGrid;
 var
   avail: Integer;
 begin
@@ -237,7 +246,7 @@ begin
   GridView.Invalidate;
 end;
 
-procedure TForm1.GridViewDrawCell(Sender: TObject; aCol, aRow: Integer;
+procedure TTMDBClientForm.GridViewDrawCell(Sender: TObject; aCol, aRow: Integer;
   aRect: TRect; aState: TGridDrawState);
 var
   mediatype, fulltitle, origTitle: string;
@@ -305,7 +314,7 @@ begin
   end;
 end;
 
-procedure TForm1.GridViewHeaderClick(Sender: TObject; IsColumn: Boolean; Index: Integer);
+procedure TTMDBClientForm.GridViewHeaderClick(Sender: TObject; IsColumn: Boolean; Index: Integer);
 var
   i, j, k, rowCount: Integer;
   SortList: TStringList;
@@ -423,7 +432,7 @@ begin
   end;
 end;
 
-procedure TForm1.GridViewSelection(Sender: TObject; aCol, aRow: Integer);
+procedure TTMDBClientForm.GridViewSelection(Sender: TObject; aCol, aRow: Integer);
 var
   Base64Str: string;
 begin
@@ -434,7 +443,7 @@ begin
     LoadImageFromBase64(Base64Str);
 end;
 
-procedure TForm1.LoadSearchResults(const AJsonStr: string);
+procedure TTMDBClientForm.LoadSearchResults(const AJsonStr: string);
 var
   JSONData: TJSONData;
   JSONArray: TJSONArray;
@@ -497,7 +506,7 @@ begin
   end;
 end;
 
-procedure TForm1.LoadImageFromBase64(const Base64Str: string);
+procedure TTMDBClientForm.LoadImageFromBase64(const Base64Str: string);
 var
   Base64Stream: TStringStream;
   DecodingStream: TBase64DecodingStream;
