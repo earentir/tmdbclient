@@ -10,6 +10,13 @@ uses
   FPReadPNG, FPReadJPEG, Types;
 
 type
+  TConfig = record
+    TMDBApiKey: string;
+    Left: Integer;
+    Top: Integer;
+  end;
+
+type
 
   { TForm1 }
 
@@ -24,38 +31,81 @@ type
     SmallPosterPanel: TPanel;
     SearchPanel: TPanel;
     StatusBar1: TStatusBar;
-    StringGrid1: TStringGrid;
+    GridView: TStringGrid;
     TopPanel: TPanel;
     TrayIcon1: TTrayIcon;
     MovieCheck: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure SearchButtonClick(Sender: TObject);
     procedure SearchEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure StringGrid1DrawCell(Sender: TObject; aCol, aRow: Integer;
+    procedure GridViewDrawCell(Sender: TObject; aCol, aRow: Integer;
       aRect: TRect; aState: TGridDrawState);
-    procedure StringGrid1HeaderClick(Sender: TObject; IsColumn: Boolean;
+    procedure GridViewHeaderClick(Sender: TObject; IsColumn: Boolean;
       Index: Integer);
-    procedure StringGrid1Selection(Sender: TObject; aCol, aRow: Integer);
+    procedure GridViewSelection(Sender: TObject; aCol, aRow: Integer);
   private
     FJsonData: string;
     procedure LoadSearchResults(const AJsonStr: string);
     procedure UpdateDisplayGrid;
     procedure LoadImageFromBase64(const Base64Str: string);
-    procedure ExecuteSearch(const SearchTerm: string);
+    procedure ExecuteSearch(const SearchTerm: string; const APIKey: string);
     function LoadJsonFromFile: Boolean;
+    function LoadConfig(const AFileName: string): TConfig;
   public
     { public declarations }
   end;
 
 var
   Form1: TForm1;
+  Config: TConfig;
+
+
 
 implementation
 
 {$R *.lfm}
 
+function TForm1.LoadConfig(const AFileName: string): TConfig;
+var
+  JSONData: TJSONData;
+  JSONObject: TJSONObject;
+  JSONString: TStringList;
+begin
+  // Set default values in case keys are missing
+  Result.TMDBApiKey := '';
+  Result.Left := 0;
+  Result.Top := 0;
+
+  if not FileExists(AFileName) then
+    raise Exception.Create('Config file not found: ' + AFileName);
+
+  JSONString := TStringList.Create;
+  try
+    JSONString.LoadFromFile(AFileName);
+    JSONData := GetJSON(JSONString.Text);
+    try
+      if JSONData.JSONType <> jtObject then
+        raise Exception.Create('Invalid JSON format in ' + AFileName);
+
+      JSONObject := TJSONObject(JSONData);
+
+      // Read the values from the JSON object, using default values if necessary
+      Result.TMDBApiKey := JSONObject.Get('tmdbapikey', '');
+      Result.Left := JSONObject.Get('left', 0);
+      Result.Top := JSONObject.Get('top', 0);
+    finally
+      JSONData.Free;
+    end;
+  finally
+    JSONString.Free;
+  end;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+
+  Config := LoadConfig('tmdbclient.config');
+
   // Load the JSON file during form creation
   if LoadJsonFromFile then
   begin
@@ -98,14 +148,14 @@ begin
   SearchTerm := Trim(SearchEdit.Text);
   if SearchTerm = '' then Exit;  // Skip empty searches
 
-  ExecuteSearch(SearchTerm);
+  ExecuteSearch(SearchTerm, Config.TMDBApiKey);
 end;
 
-procedure TForm1.ExecuteSearch(const SearchTerm: string);
+procedure TForm1.ExecuteSearch(const SearchTerm: string; const APIKey: string);
 var
   curDir, exeName, output: string;
   exitStatus, ret: integer;
-  JsonFilePath: string;
+  args: TStringArray;
 begin
   // Set the current directory and executable path.
   curDir := ExtractFilePath(Application.ExeName);
@@ -114,44 +164,30 @@ begin
   if not FileExists(exeName) then
     exeName := exeName + '.exe';
   {$ENDIF}
-
   if not FileExists(exeName) then
   begin
     ShowMessage('Error: Executable not found: ' + exeName);
     Exit;
   end;
 
-  // Define the output file path.
-  JsonFilePath := curDir + 'searchresults.json';
+  // Prepare command line arguments including the API key flag
+  if APIKey <> '' then
+    args := ['--api-key', APIKey, 'search', SearchTerm]
+  else
+    args := ['search', SearchTerm];
 
   // Call the RunCommandIndir function.
-  ret := RunCommandIndir(curDir, exeName, ['search', SearchTerm], output, exitStatus);
-
-  // Show a dialog with the output from the executed command.
-  //ShowMessage('Execution Output:' + sLineBreak + output);
-//ShowMessage(IntToStr(exitStatus));
+  ret := RunCommandIndir(curDir, exeName, args, output, exitStatus);
+  //ShowMessage(output);
 
   // Check for errors and load the JSON file if available.
   if exitStatus = 0 then
   begin
     LoadSearchResults(output);
-    //if FileExists(JsonFilePath) then
-    //begin
-    //  if LoadJsonFromFile then
-    //  begin
-    //    LoadSearchResults(FJsonData);
-    //  end
-    //  else
-    //    ShowMessage('Failed to load JSON data from file.');
-    //end
-    //else
-    //  ShowMessage('Output file not found: ' + JsonFilePath);
   end
   else
     ShowMessage('Command execution failed with exit status: ' + IntToStr(exitStatus));
 end;
-
-
 
 procedure TForm1.SearchEditKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -168,40 +204,40 @@ procedure TForm1.UpdateDisplayGrid;
 var
   avail: Integer;
 begin
-  // Configure StringGrid1 with only the visible columns.
-  StringGrid1.Columns.Clear;
-  StringGrid1.AutoFillColumns := False;
+  // Configure GridView with only the visible columns.
+  GridView.Columns.Clear;
+  GridView.AutoFillColumns := False;
   // Use the same row count as DataStringGrid.
-  StringGrid1.RowCount := DataStringGrid.RowCount;
-  StringGrid1.FixedRows := 1;
+  GridView.RowCount := DataStringGrid.RowCount;
+  GridView.FixedRows := 1;
   // Set a row height large enough for two lines of text.
-  StringGrid1.DefaultRowHeight := 40;  // Adjust this value as needed
+  GridView.DefaultRowHeight := 40;  // Adjust this value as needed
 
-  with StringGrid1.Columns.Add do
+  with GridView.Columns.Add do
   begin
     Title.Caption := 'Type';
     Width := 50;
   end;
-  with StringGrid1.Columns.Add do
+  with GridView.Columns.Add do
   begin
     Title.Caption := 'Released';
     Width := 80;
   end;
-  with StringGrid1.Columns.Add do
+  with GridView.Columns.Add do
   begin
     Title.Caption := 'Title';
     // Width will be adjusted.
   end;
 
-  avail := StringGrid1.ClientWidth - (StringGrid1.ColWidths[0] + StringGrid1.ColWidths[1]);
+  avail := GridView.ClientWidth - (GridView.ColWidths[0] + GridView.ColWidths[1]);
   if avail > 0 then
-    StringGrid1.ColWidths[2] := avail;
+    GridView.ColWidths[2] := avail;
 
   // Force a redraw.
-  StringGrid1.Invalidate;
+  GridView.Invalidate;
 end;
 
-procedure TForm1.StringGrid1DrawCell(Sender: TObject; aCol, aRow: Integer;
+procedure TForm1.GridViewDrawCell(Sender: TObject; aCol, aRow: Integer;
   aRect: TRect; aState: TGridDrawState);
 var
   mediatype, fulltitle, origTitle: string;
@@ -209,14 +245,14 @@ var
   ts: TTextStyle;
   lineRect: TRect;
 begin
-  with StringGrid1.Canvas do
+  with GridView.Canvas do
   begin
     // For the header row, just draw the header text.
     if aRow = 0 then
     begin
       Font.Color := clBlack;
       Font.Style := [fsBold];
-      TextRect(aRect, aRect.Left + 2, aRect.Top + 2, StringGrid1.Cells[aCol, aRow]);
+      TextRect(aRect, aRect.Left + 2, aRect.Top + 2, GridView.Cells[aCol, aRow]);
       Exit;
     end;
 
@@ -231,7 +267,7 @@ begin
           else
             ImgIndex := 0;
           if Assigned(TypesImageList) then
-            TypesImageList.Draw(StringGrid1.Canvas,
+            TypesImageList.Draw(GridView.Canvas,
               aRect.Left + (aRect.Width - TypesImageList.Width) div 2,
               aRect.Top + (aRect.Height - TypesImageList.Height) div 2, ImgIndex);
         end;
@@ -269,7 +305,7 @@ begin
   end;
 end;
 
-procedure TForm1.StringGrid1HeaderClick(Sender: TObject; IsColumn: Boolean; Index: Integer);
+procedure TForm1.GridViewHeaderClick(Sender: TObject; IsColumn: Boolean; Index: Integer);
 var
   i, j, k, rowCount: Integer;
   SortList: TStringList;
@@ -387,7 +423,7 @@ begin
   end;
 end;
 
-procedure TForm1.StringGrid1Selection(Sender: TObject; aCol, aRow: Integer);
+procedure TForm1.GridViewSelection(Sender: TObject; aCol, aRow: Integer);
 var
   Base64Str: string;
 begin
